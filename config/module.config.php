@@ -21,6 +21,12 @@ return array(
             //without passing variable controlers
         )
     ),
+    'controller_plugins' => array(
+        'factories' => array(
+            'ServiceQuery' => 'Service\Controller\Plugin\ServiceQuery\PluginFactory',
+            'ServiceUiGenerator' => 'Service\Controller\Plugin\ServiceUiGenerator\PluginFactory',
+        )
+    ),
 
     'service_manager' => array(
         'factories' => array(
@@ -39,18 +45,19 @@ return array(
                 'type' => 'segment',
                 // Configure the route itself
                 'options' => array(
-                    // Listen to "/blog" as uri
-                    'route'    => '/service[/:controller[/:action]]',
+                    'route'    => '[/:lang]/service[/:controller[/:action[/:id]]]',
                     'constraints' => array(
+                        'lang' => include __DIR__ . "/../../../config/language.config.php",
                         'controller' => '[a-zA-Z][a-zA-Z0-9_-]*',
-
+                        'id'     => '[0-9]+',
                     ),
                     // Define default controller and action to be called when this route is matched
                     'defaults' => array(
+                        'lang' => 'fa',
                         'controller' => 'management',
                         'action'     => 'create',
                     )
-                )
+                ),
             )
         )
     ),
