@@ -2,12 +2,13 @@
 
 namespace Service\Controller;
 
+use Application\Controller\BaseController;
 use Zend\Mvc\Controller\AbstractActionController;// for run in zend's MVC
 use Ellie\Interfaces\ControllerInterface;
 use Application\Entity\Service;
 use Application\Entity\ServiceLang;
 
-class ManagementController extends  AbstractActionController
+class ManagementController extends  BaseController
     implements ControllerInterface
 {
     //***Services
@@ -29,6 +30,7 @@ class ManagementController extends  AbstractActionController
         $this->eventHandler = $eventHandler;
 
     }
+
     public function onDispatch(\Zend\Mvc\MvcEvent $e)
     {
         $layout = $this->layout();
@@ -40,9 +42,9 @@ class ManagementController extends  AbstractActionController
         $this->language = $this->doctrineService->getRepository('Application\Entity\Language')->findOneBy(array("code"=> $languageCode));
         return parent::onDispatch($e);
     }
+
     public function createAction()
     {
-
         if($this->request->isPost())
             {
                 $submitedData = (array) $this->request->getPost();
