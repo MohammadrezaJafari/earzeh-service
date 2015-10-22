@@ -78,7 +78,7 @@ class ManagementController extends  AbstractActionController
 
         $services = $this->serviceUiGeneratorPlugin->getForTree($this->language->getId());
 
-        return $this->serviceUiGeneratorPlugin->getCreateServiceForm($services,$this->language->code);
+        return $this->serviceUiGeneratorPlugin->getCreateServiceForm($services,$this->language->getCode());
 
     }
 
