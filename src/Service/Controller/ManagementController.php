@@ -38,6 +38,8 @@ class ManagementController extends  AbstractActionController
         $this->serviceUiGeneratorPlugin = $this->ServiceUiGenerator();
         $languageCode = $this->params()->fromRoute('lang', 'fa');
         $this->language = $this->doctrineService->getRepository('Application\Entity\Language')->findOneBy(array("code"=> $languageCode));
+        if(!isset($this->language))
+            die("cant find language");
         return parent::onDispatch($e);
     }
     public function createAction()

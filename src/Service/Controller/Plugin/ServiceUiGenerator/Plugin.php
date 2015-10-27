@@ -9,6 +9,7 @@
 namespace Service\Controller\Plugin\ServiceUiGenerator;
 
 use Doctrine\DBAL\Connection;
+use Ellie\UI\Element\Assign;
 use Zend\View\Model\ViewModel;
 use Ellie\UI\Form;
 use Ellie\UI\Element\TreeSelect;
@@ -105,13 +106,19 @@ class Plugin extends AbstractPlugin
             "selected"=>(isset($currentService[0]["parent"]))?$currentService[0]["parent"]:"",
             "name" => "parent",
         ]);
-        //die(var_dump($currentService));
         $fieldsetCat->addChild($treeSelect);
+        $fieldsetAssign = new FieldSet(["name" => 'assigned-users','label'=>'Assign Users', 'header' => 'assign users to Service']);
+        $assign = new Assign([
+            "test" => "assigning ..."
+        ]);
+        $fieldsetAssign->addChild($assign);
+
 
 
         $tab->addChild($fieldsetFa, 'fieldsetFa');
         $tab->addChild($fieldsetEn, 'fieldsetEn');
         $tab->addChild($fieldsetCat,'fieldsetCat');
+        $tab->addChild($fieldsetAssign , 'fieldsetAssign');
         $form->addChild($tab);
         $form->addChild($submit, 'submit');
 
