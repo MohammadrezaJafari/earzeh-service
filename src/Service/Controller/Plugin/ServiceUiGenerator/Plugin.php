@@ -41,7 +41,7 @@ class Plugin extends AbstractPlugin
 
         return $form;
     }
-    public function getCreateServiceForm($services ,$languageCode, $currentService= null){
+    public function getCreateServiceForm($services, $usersData ,$languageCode, $currentService= null){
         $header = (isset($currentService))?"Edit Service":"Create new Service";
         $action = (isset($currentService))?"edit":"create";
         $id = (isset($currentService))?$currentService[0]['id']:null;
@@ -109,7 +109,9 @@ class Plugin extends AbstractPlugin
         $fieldsetCat->addChild($treeSelect);
         $fieldsetAssign = new FieldSet(["name" => 'assigned-users','label'=>'Assign Users', 'header' => 'assign users to Service']);
         $assign = new Assign([
-            "test" => "assigning ..."
+            "selected" => $usersData["selected"],
+            "unselected" => $usersData["unselected"],
+            "title"=> "users"
         ]);
         $fieldsetAssign->addChild($assign);
 

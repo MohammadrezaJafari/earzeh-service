@@ -44,11 +44,10 @@ class ManagementController extends  AbstractActionController
     }
     public function createAction()
     {
-
+        $usersData = $this->serviceQueryPlugin->getUsers();
         if($this->request->isPost())
             {
                 $submitedData = (array) $this->request->getPost();
-
                 $serviceEntity = new Service();
                 if(!empty($submitedData["parent"])){
 
@@ -69,6 +68,8 @@ class ManagementController extends  AbstractActionController
                     $serviceTemp->setService($serviceEntity);
                     $this->doctrineService->persist($serviceTemp);
                 }
+
+                $this->serviceQueryPlugin->updateWorkAt($serviceEntity,isset($submitedData["selectedUsers"])?$submitedData["selectedUsers"]:array(),$usersData["selected"]);
                 $this->doctrineService->flush();
 
                 $this->layout()->message = [
@@ -78,16 +79,17 @@ class ManagementController extends  AbstractActionController
 
             }
 
+        $usersData = $this->serviceQueryPlugin->getUsers();
         $services = $this->serviceUiGeneratorPlugin->getForTree($this->language->getId());
 
-        return $this->serviceUiGeneratorPlugin->getCreateServiceForm($services,$this->language->getCode());
+        return $this->serviceUiGeneratorPlugin->getCreateServiceForm($services,$usersData,$this->language->getCode());
 
     }
 
     public function editAction()
     {
         $id = $this->params()->fromRoute('id', null);
-
+        $usersData = $this->serviceQueryPlugin->getUsers($id);
         if($this->request->isPost())
             {
                 $submitedData = (array) $this->request->getPost();
@@ -99,6 +101,7 @@ class ManagementController extends  AbstractActionController
                     $serviceEntity->setParent(null);
                 }
                 $this->serviceQueryPlugin->updateLanguageEntities($submitedData,$id);
+                $this->serviceQueryPlugin->updateWorkAt($serviceEntity,isset($submitedData["selectedUsers"])?$submitedData["selectedUsers"]:array(),$usersData["selected"]);
                 $this->doctrineService->flush();
                 $this->layout()->message = [
                     'type' => 'success',
@@ -106,9 +109,9 @@ class ManagementController extends  AbstractActionController
                 ];
             }
         $currentService = $this->serviceQueryPlugin->getLanguageBased(array("id"=>$id,"deletedAt"=>"All"));
-
+        $usersData = $this->serviceQueryPlugin->getUsers($id);
         $services = $this->serviceUiGeneratorPlugin->getForTree($this->language->getId());
-        return $this->serviceUiGeneratorPlugin->getCreateServiceForm($services,$this->language->getCode(),$currentService);
+        return $this->serviceUiGeneratorPlugin->getCreateServiceForm($services,$usersData,$this->language->getCode(),$currentService);
     }
 
     public function deleteAction()
