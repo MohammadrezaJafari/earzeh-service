@@ -6,12 +6,14 @@ use Zend\Mvc\Controller\AbstractActionController;// for run in zend's MVC
 use Ellie\Interfaces\ControllerInterface;
 use Application\Entity\Service;
 use Application\Entity\ServiceLang;
+use Zend\View\Model\ViewModel;
 
 class ManagementController extends  AbstractActionController
     implements ControllerInterface
 {
     //***Services
     protected $doctrineService;
+    protected $authService;
     //***Other Vars
     protected $request;
     protected $language;
@@ -25,6 +27,7 @@ class ManagementController extends  AbstractActionController
     public function __construct($services,$eventHandler)
     {
         $this->doctrineService = $services["doctrine"];
+        $this->authService = $services["auth"];
         $this->request = $this->getRequest();
         $this->eventHandler = $eventHandler;
 
@@ -131,8 +134,23 @@ class ManagementController extends  AbstractActionController
 
     public function listAction()
     {
-        $services = $this->serviceQueryPlugin->getLanguageBased(array("languageId"=>$this->language->getId(),"deletedAt"=>""));
-        die(var_dump($services));
+        if($this->authService->hasIdentity())
+            {
+                $user = $this->authService->getIdentity();
+                $availableServices =  $this->serviceQueryPlugin->getAvailableServices($user);
+                $result = array();
+                foreach ($availableServices as $service ) {
+                    $serviceTemp = $this->serviceQueryPlugin->getLanguageBased(array("languageId"=>$this->language->getId(),"deletedAt"=>"","id"=>$service->getId()));
+                    array_push($result,$serviceTemp[0]);
+                }
+
+
+                $view = new ViewModel();
+                $view->setTemplate('service/datatable');
+                $view->setVariable("services",$result);
+                return $view;
+
+            }
     }
 
 }

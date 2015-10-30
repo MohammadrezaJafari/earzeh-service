@@ -25,6 +25,7 @@ return array(
         'factories' => array(
             'ServiceQuery' => 'Service\Controller\Plugin\ServiceQuery\PluginFactory',
             'ServiceUiGenerator' => 'Service\Controller\Plugin\ServiceUiGenerator\PluginFactory',
+            'Ellie\Service\Authentication' => 'Ellie\Service\Authentication\ServiceFactory',
         )
     ),
 

@@ -28,16 +28,16 @@ class Plugin extends AbstractPlugin
             ->from('Application\Entity\Service','s')
             ->join('Application\Entity\ServiceLang','sl','WITH','s.id = IDENTITY(sl.service)')
             ->join('Application\Entity\Language','l','WITH','l.id = IDENTITY(sl.language)');
-
+        $params =  array();
         if(isset($where["id"]))
                 {
-                    $queryBuilder->where('s.id = :id')
-                    ->setParameters(array('id'=>$where["id"]));
+                    $queryBuilder->where('s.id = :id');
+                    $params["id"]=$where["id"];
                 }
             if(isset($where["languageId"]))
                 {
-                    $queryBuilder->where('l.id = :languageId')
-                    ->setParameters(array('languageId'=>$where["languageId"]));
+                    $queryBuilder->andWhere('l.id = :languageId');
+                    $params["languageId"]=$where["languageId"];
                 }
         if($where["deletedAt"]==null || $where["deletedAt"] != "All" )
         {
@@ -45,16 +45,19 @@ class Plugin extends AbstractPlugin
             if($where["deletedAt"]!=null)
             {
 
-                $queryBuilder->where('sl.deletedAt = :deletedAt')
-                    ->setParameters(array('deletedAt'=>$where["deletedAt"]));
+                $queryBuilder->andWhere('sl.deletedAt = :deletedAt');
+                $params["deletedAt"]=$where["deletedAt"];
             }else{
                 $queryBuilder->andWhere("sl.deletedAt is null");
             }
 
         }
+        $queryBuilder->setParameters($params);
+
 
 
         $query = $queryBuilder->getQuery();
+        //die($query->getSql());
         $results = $query->getResult();
         return $results;
     }
@@ -159,4 +162,17 @@ class Plugin extends AbstractPlugin
             }
         $this->doctrineService->flush();
     }
+
+    public function getAvailableServices(\Application\Entity\User $user)
+        {
+            $userId = $user->getId();
+            $rows = $this->doctrineService->getRepository('Application\Entity\WorkAt')->findBy(array("user"=>$userId));
+            $result = array();
+            foreach($rows as $row)
+                {
+                    array_push($result,$row->getService());
+                }
+
+            return $result;
+        }
 }
