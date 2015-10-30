@@ -24,6 +24,8 @@ class PluginFactory implements FactoryInterface
     {
         $realServiceLocator = $serviceLocator->getServiceLocator();
         $doctrineService = $realServiceLocator->get('Doctrine\ORM\EntityManager');
-        return new Plugin($doctrineService);
+        $translator = $realServiceLocator->get('translator');
+
+        return new Plugin($doctrineService,$translator);
     }
 }

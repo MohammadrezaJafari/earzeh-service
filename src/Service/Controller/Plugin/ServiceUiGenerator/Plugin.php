@@ -8,8 +8,6 @@
 
 namespace Service\Controller\Plugin\ServiceUiGenerator;
 
-use Doctrine\DBAL\Connection;
-use Zend\View\Model\ViewModel;
 use Ellie\UI\Form;
 use Ellie\UI\Element\TreeSelect;
 use Ellie\UI\Element\Button;
@@ -23,47 +21,47 @@ use Zend\Mvc\Controller\Plugin\AbstractPlugin;
 class Plugin extends AbstractPlugin
 {
     protected $doctrineService;
+    protected $translator;
 
-    public function __construct($doctrineService)
+    public function __construct($doctrineService,$translator)
     {
+        $this->translator = $translator;
         $this->doctrineService = $doctrineService;
     }
 
     public function getDeleteServiceForm($currentService,$language)
     {
         $id = (isset($currentService))?$currentService[0]['id']:null;
-        $langObj = $this->doctrineService->getRepository('Application\Entity\ServiceLang')->findOneBy(array("language"=>$language->getId(),"service"=>$id));
-        $header = "Are you sure about deleting Service ".$langObj->getName()." ?";
+        $langObj  = $this->doctrineService->getRepository('Application\Entity\ServiceLang')->findOneBy(array("language"=>$language->getId(),"service"=>$id));
+        $header   = "Are you sure about deleting Service ".$langObj->getName()." ?";
         $form     = new Form(['header' => $header,'action' => $this->getController()->url()->fromRoute("service",array("controller"=>"management","action"=>"delete","id"=>$id,"lang"=>$language->getCode())),'name'=>'serviceDeleteForm']);
-        $submit = new Button();
+        $submit   = new Button();
         $form->addChild($submit);
 
         return $form;
     }
 
     public function getCreateServiceForm($services ,$languageCode, $currentService= null){
-        $header = (isset($currentService))?"Edit Service":"Create new Service";
+        $header = (isset($currentService))?"Edit Service":$this->translator->translate("Service Management");
         $action = (isset($currentService))?"edit":"create";
-        $id = (isset($currentService))?$currentService[0]['id']:null;
+        $id     = (isset($currentService))?$currentService[0]['id']:null;
         $serviceLangs = (isset($currentService))?(($currentService[0]["code"]=="fa")?array("fa"=>$currentService[0],"en"=>$currentService[1]):array("fa"=>$currentService[1],"en"=>$currentService[0])):array();
-        // die(var_dump($languageCode));
-        $form     = new Form(['header' => $header,'action' => $this->getController()->url()->fromRoute("service",array("controller"=>"management","action"=>$action,"id"=>$id,"lang"=>$languageCode)),'name'=>'serviceForm']);
+        $form   = new Form(['header' => $header,'action' => $this->getController()->url()->fromRoute("service",array("controller"=>"management","action"=>$action,"id"=>$id,"lang"=>$languageCode)),'name'=>'serviceForm']);
+        $tab    = new TabSet();
 
-        $tab = new TabSet();
-
-        $fieldsetFa = new FieldSet(['name' => 'serviceFa','header' => 'Add A New Service' , 'label' => 'Fa']);
+        $fieldsetFa = new FieldSet(['name' => 'serviceFa','header' => $this->translator->translate('Add A New Service') , 'label' => 'Fa']);
         $serviceNameFa = new Text([
             'name' => 'name[fa]',
-            'placeholder' => 'Service Name',
+            'placeholder' => $this->translator->translate('Service Name'),
             'type' => 'text',
             'value' => (isset($serviceLangs["fa"]["name"]))?$serviceLangs["fa"]["name"]:"",
-            'label' => 'Service Name',
+            'label' => $this->translator->translate('Service Name'),
         ]);
 
         $descriptionFa = new Textarea([
             'name' => 'description[fa]',
-            'placeholder' => 'Description ...',
-            'label' => 'Description',
+            'placeholder' => $this->translator->translate('Description') . 'Description ...',
+            'label' => $this->translator->translate('Description'),
             'value'=>(isset($serviceLangs["fa"]["description"]))?$serviceLangs["fa"]["description"]:"",
         ]);
 
@@ -75,38 +73,37 @@ class Plugin extends AbstractPlugin
 
 
 
-        $fieldsetEn = new FieldSet(['name' => 'serviceEn','header' => 'Add A New Service' , 'label' => 'En']);
+        $fieldsetEn = new FieldSet(['name' => 'serviceEn','header' => '' , 'label' => 'En']);
         $serviceNameEn = new Text([
             'name' => 'name[en]',
-            'placeholder' => 'Service Name',
+            'placeholder' => $this->translator->translate('Service Name'),
             'value' => (isset($serviceLangs["en"]["name"]))?$serviceLangs["en"]["name"]:"",
             'type' => 'text',
-            'label' => 'Service Name',
+            'label' => $this->translator->translate('Service Name'),
         ]);
         $descriptionEn = new Textarea([
             'name' => 'description[en]',
-            'placeholder' => 'Description ...',
-            'label' => 'Description',
+            'placeholder' => $this->translator->translate('Description') . '...',
+            'label' => $this->translator->translate('Description'),
             'value' => (isset($serviceLangs["en"]["description"]))?$serviceLangs["en"]["description"]:"",
         ]);
-        $enablCheckboxEn = new CheckBox(['name' => 'enable[en]', 'label' => 'Enable','checked'=>(isset($serviceLangs["en"]["enable"]))?$serviceLangs["en"]["enable"]:"0",'option'=>'']);
+        $enableCheckboxEn = new CheckBox(['name' => 'enable[en]', 'label' => $this->translator->translate('Enable'),'checked'=>(isset($serviceLangs["en"]["enable"]))?$serviceLangs["en"]["enable"]:"0",'option'=>'']);
 
         $fieldsetEn->addChild($serviceNameEn);
-        $fieldsetEn->addChild($descriptionEn, 'username');
-        $fieldsetEn->addChild($enablCheckboxEn);
+        $fieldsetEn->addChild($descriptionEn);
+        $fieldsetEn->addChild($enableCheckboxEn);
 
 
         $submit = new Button();
 
-        $fieldsetCat = new FieldSet(['name' => 'parent','label' => 'Parent', 'header' => 'Choose Parent Service']);
+        $fieldsetCat = new FieldSet(['name' => 'parent','label' => 'Parent', 'header' => $this->translator->translate("Parent Service")]);
 
         $treeSelect = new TreeSelect([
-            "title"=>"choose category of your service",
+            "title"=> $this->translator->translate("choose category of your service"),
             "services"=>$services,
             "selected"=>(isset($currentService[0]["parent"]))?$currentService[0]["parent"]:"",
             "name" => "parent",
         ]);
-        //die(var_dump($currentService));
         $fieldsetCat->addChild($treeSelect);
 
 
@@ -117,17 +114,11 @@ class Plugin extends AbstractPlugin
         $form->addChild($submit, 'submit');
 
         return $form;
-
-
-
-        return $form;
-
     }
 
     public function getForTree($language_id = 1,$parent = null){
         $result = array();
         $childObjs = $this->doctrineService->getRepository('Application\Entity\Service')->findBy(array("parent"=>$parent));
-       // die(var_dump($childObjs ));
         foreach($childObjs as $childObj){
             $childArray = $this->createArray($childObj,$language_id);
             array_push($result,$childArray);

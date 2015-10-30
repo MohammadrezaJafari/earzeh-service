@@ -35,7 +35,6 @@ class ManagementController extends  BaseController
     {
         $layout = $this->layout();
         $layout->setTemplate('layout/master');
-        $layout->setVariables(['menu' => $this->getServiceLocator()->get('Config')['menu']]);
         $this->serviceQueryPlugin = $this->ServiceQuery();
         $this->serviceUiGeneratorPlugin = $this->ServiceUiGenerator();
         $languageCode = $this->params()->fromRoute('lang', 'fa');
@@ -80,8 +79,7 @@ class ManagementController extends  BaseController
 
         $services = $this->serviceUiGeneratorPlugin->getForTree($this->language->getId());
 
-        return $this->serviceUiGeneratorPlugin->getCreateServiceForm($services,$this->language->code);
-
+        return $this->serviceUiGeneratorPlugin->getCreateServiceForm($services,$this->language->getCode());
     }
 
     public function editAction()
