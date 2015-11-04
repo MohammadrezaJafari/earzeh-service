@@ -14,6 +14,7 @@ class ManagementController extends  AbstractActionController
     //***Services
     protected $doctrineService;
     protected $authService;
+    protected $aclService;
     //***Other Vars
     protected $request;
     protected $language;
@@ -28,6 +29,8 @@ class ManagementController extends  AbstractActionController
     {
         $this->doctrineService = $services["doctrine"];
         $this->authService = $services["auth"];
+        $this->aclService = $services["acl"];
+
         $this->request = $this->getRequest();
         $this->eventHandler = $eventHandler;
 
@@ -143,11 +146,12 @@ class ManagementController extends  AbstractActionController
                     $serviceTemp = $this->serviceQueryPlugin->getLanguageBased(array("languageId"=>$this->language->getId(),"deletedAt"=>"","id"=>$service->getId()));
                     array_push($result,$serviceTemp[0]);
                 }
+                $usersRole = $user->getRole();
 
 
                 $view = new ViewModel();
                 $view->setTemplate('service/datatable');
-                $view->setVariable("services",$result);
+                $view->setVariables(array("services"=>$result,"canCreate"=>$this->aclService->isAllowed($usersRole->getName(),"createService"),"canManage"=>$this->aclService->isAllowed($usersRole->getName(),"manageService")));
                 return $view;
 
             }

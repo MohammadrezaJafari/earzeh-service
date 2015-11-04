@@ -32,6 +32,7 @@ return array(
     'service_manager' => array(
         'factories' => array(
             'Ellie\Service\Log' => 'Ellie\Service\Log\LogServiceFactory',
+            'Ellie\Service\Acl' => 'Ellie\Service\Acl\ServiceFactory',
            // 'Ellie\Service\Authentication' => 'Ellie\Service\Authentication\ServiceFactory',
         )
     ),

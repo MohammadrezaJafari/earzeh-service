@@ -14,10 +14,12 @@ use Zend\Mvc\Controller\Plugin\AbstractPlugin;
 class Plugin extends AbstractPlugin
 {
     protected $doctrineService;
+    protected $aclService;
 
-    public function __construct($doctrineService)
+    public function __construct($doctrineService,$aclService)
     {
         $this->doctrineService = $doctrineService;
+        $this->aclService = $aclService;
     }
 
     public function getLanguageBased($where=array())// add All for deletedAt
@@ -93,6 +95,13 @@ class Plugin extends AbstractPlugin
         $queryBuilder->
         select('u.id','IDENTITY(u.defaultLanguage) AS defaultLanguage','IDENTITY(u.role) AS role','u.username','u.password','u.country','u.email','u.avatar','u.deletedAt','u.updatedAt','u.createdAt')
             ->from('Application\Entity\User','u');
+        $operatorRole = $this->doctrineService->getRepository('Application\Entity\Role')->findOneBy(array("name"=>"operator"));
+        if(isset($operatorRole))
+            {
+                $queryBuilder->where('u.role = :role')
+                    ->setParameters(array('role'=>$operatorRole->getId()));
+            }
+
 
         $query = $queryBuilder->getQuery();
         $results = $query->getResult();
@@ -165,8 +174,15 @@ class Plugin extends AbstractPlugin
 
     public function getAvailableServices(\Application\Entity\User $user)
         {
-            $userId = $user->getId();
-            $rows = $this->doctrineService->getRepository('Application\Entity\WorkAt')->findBy(array("user"=>$userId));
+            $userRole = $user->getRole();
+            $findBy=array();
+            if(!$this->aclService->isAllowed($userRole->getName(),"accessAllServices"))
+                {
+                    $userId = $user->getId();
+                    $findBy = array("user"=>$userId);
+                }
+
+            $rows = $this->doctrineService->getRepository('Application\Entity\WorkAt')->findBy($findBy);
             $result = array();
             foreach($rows as $row)
                 {
