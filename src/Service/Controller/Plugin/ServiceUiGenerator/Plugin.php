@@ -8,6 +8,9 @@
 
 namespace Service\Controller\Plugin\ServiceUiGenerator;
 
+use Doctrine\DBAL\Connection;
+use Ellie\UI\Element\Assign;
+use Zend\View\Model\ViewModel;
 use Ellie\UI\Form;
 use Ellie\UI\Element\TreeSelect;
 use Ellie\UI\Element\Button;
@@ -32,17 +35,16 @@ class Plugin extends AbstractPlugin
     public function getDeleteServiceForm($currentService,$language)
     {
         $id = (isset($currentService))?$currentService[0]['id']:null;
-        $langObj  = $this->doctrineService->getRepository('Application\Entity\ServiceLang')->findOneBy(array("language"=>$language->getId(),"service"=>$id));
-        $header   = "Are you sure about deleting Service ".$langObj->getName()." ?";
+        $langObj = $this->doctrineService->getRepository('Application\Entity\ServiceLang')->findOneBy(array("language"=>$language->getId(),"service"=>$id));
+        $header = "Are you sure about deleting Service ".$langObj->getName()." ?";
         $form     = new Form(['header' => $header,'action' => $this->getController()->url()->fromRoute("service",array("controller"=>"management","action"=>"delete","id"=>$id,"lang"=>$language->getCode())),'name'=>'serviceDeleteForm']);
-        $submit   = new Button();
+        $submit = new Button();
         $form->addChild($submit);
 
         return $form;
     }
 
-    public function getCreateServiceForm($services ,$languageCode, $currentService= null){
-        $header = (isset($currentService))?"Edit Service":$this->translator->translate("Service Management");
+    public function getCreateServiceForm($services, $usersData ,$languageCode, $currentService= null){        $header = (isset($currentService))?"Edit Service":$this->translator->translate("Service Management");
         $action = (isset($currentService))?"edit":"create";
         $id     = (isset($currentService))?$currentService[0]['id']:null;
         $serviceLangs = (isset($currentService))?(($currentService[0]["code"]=="fa")?array("fa"=>$currentService[0],"en"=>$currentService[1]):array("fa"=>$currentService[1],"en"=>$currentService[0])):array();
@@ -105,11 +107,20 @@ class Plugin extends AbstractPlugin
             "name" => "parent",
         ]);
         $fieldsetCat->addChild($treeSelect);
+        $fieldsetAssign = new FieldSet(["name" => 'assigned-users','label'=>'Assign Users', 'header' => 'assign users to Service']);
+        $assign = new Assign([
+            "selected" => $usersData["selected"],
+            "unselected" => $usersData["unselected"],
+            "title"=> "users"
+        ]);
+        $fieldsetAssign->addChild($assign);
+
 
 
         $tab->addChild($fieldsetFa, 'fieldsetFa');
         $tab->addChild($fieldsetEn, 'fieldsetEn');
         $tab->addChild($fieldsetCat,'fieldsetCat');
+        $tab->addChild($fieldsetAssign , 'fieldsetAssign');
         $form->addChild($tab);
         $form->addChild($submit, 'submit');
 

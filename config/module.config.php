@@ -24,6 +24,7 @@ return array(
         'factories' => array(
             'ServiceQuery' => 'Service\Controller\Plugin\ServiceQuery\PluginFactory',
             'ServiceUiGenerator' => 'Service\Controller\Plugin\ServiceUiGenerator\PluginFactory',
+            'Ellie\Service\Authentication' => 'Ellie\Service\Authentication\ServiceFactory',
         )
     ),
 
@@ -53,8 +54,8 @@ return array(
                     // Define default controller and action to be called when this route is matched
                     'defaults' => array(
                         'lang' => 'fa',
-                        'controller' => 'management',
-                        'action'     => 'create',
+//                        'controller' => 'management',
+//                        'action'     => 'create',
                     )
                 ),
             )
@@ -86,7 +87,7 @@ return array(
                     'route' => 'service',
                     'params'=>array(
                         'lang'=>'en',
-                        'controller'=>'manage',
+                        'controller'=>'management',
                         'action'=>'list',
                     )
                 ),

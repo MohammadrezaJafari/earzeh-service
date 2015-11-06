@@ -7,6 +7,7 @@
  */
 
 namespace Service\Controller\Plugin\ServiceQuery;
+use Application\Entity\WorkAt;
 use Doctrine\DBAL\Connection;
 
 use Zend\Mvc\Controller\Plugin\AbstractPlugin;
@@ -27,16 +28,16 @@ class Plugin extends AbstractPlugin
             ->from('Application\Entity\Service','s')
             ->join('Application\Entity\ServiceLang','sl','WITH','s.id = IDENTITY(sl.service)')
             ->join('Application\Entity\Language','l','WITH','l.id = IDENTITY(sl.language)');
-
+        $params =  array();
         if(isset($where["id"]))
                 {
-                    $queryBuilder->where('s.id = :id')
-                    ->setParameters(array('id'=>$where["id"]));
+                    $queryBuilder->where('s.id = :id');
+                    $params["id"]=$where["id"];
                 }
             if(isset($where["languageId"]))
                 {
-                    $queryBuilder->where('l.id = :languageId')
-                    ->setParameters(array('languageId'=>$where["languageId"]));
+                    $queryBuilder->andWhere('l.id = :languageId');
+                    $params["languageId"]=$where["languageId"];
                 }
         if($where["deletedAt"]==null || $where["deletedAt"] != "All" )
         {
@@ -44,17 +45,75 @@ class Plugin extends AbstractPlugin
             if($where["deletedAt"]!=null)
             {
 
-                $queryBuilder->where('sl.deletedAt = :deletedAt')
-                    ->setParameters(array('deletedAt'=>$where["deletedAt"]));
+                $queryBuilder->andWhere('sl.deletedAt = :deletedAt');
+                $params["deletedAt"]=$where["deletedAt"];
             }else{
                 $queryBuilder->andWhere("sl.deletedAt is null");
             }
 
         }
+        $queryBuilder->setParameters($params);
+
+
+
+        $query = $queryBuilder->getQuery();
+        //die($query->getSql());
+        $results = $query->getResult();
+        return $results;
+    }
+
+    public function getUsers($service_id=null)
+        {
+            $allUsers = $this->getAllUsers();
+            $selectedUsers = $this->getSelectedUsers($service_id);
+            $unselectedUsers = $this->exceptUsers($allUsers,$selectedUsers);
+            $result = ["selected"=>$selectedUsers,"unselected"=>$unselectedUsers];
+            return $result;
+        }
+    public function exceptUsers($first,$second)
+        {
+            $result = array();
+            foreach($first as $user)
+                {
+                    $userSerialized = serialize($user);
+                    $exists = false;
+                    foreach($second as $user2)
+                        {
+                            $user2Serialized = serialize($user2);
+                            if($userSerialized == $user2Serialized)
+                                $exists = true;
+                        }
+                    if(!$exists)
+                        array_push($result,$user);
+                }
+            return $result;
+        }
+    public function getAllUsers(){
+        $queryBuilder = $this->doctrineService->createQueryBuilder();
+        $queryBuilder->
+        select('u.id','IDENTITY(u.defaultLanguage) AS defaultLanguage','IDENTITY(u.role) AS role','u.username','u.password','u.country','u.email','u.avatar','u.deletedAt','u.updatedAt','u.createdAt')
+            ->from('Application\Entity\User','u');
+
+        $query = $queryBuilder->getQuery();
+        $results = $query->getResult();
+        return $results;
+    }
+    public function getSelectedUsers($service_id=null){
+        if($service_id != null)
+        {
+        $queryBuilder = $this->doctrineService->createQueryBuilder();
+        $queryBuilder->
+        select('u.id','IDENTITY(u.defaultLanguage) AS defaultLanguage','IDENTITY(u.role) AS role','u.username','u.password','u.country','u.email','u.avatar','u.deletedAt','u.updatedAt','u.createdAt')
+            ->from('Application\Entity\User','u')
+            ->join('Application\Entity\WorkAt','w','WITH','u.id = IDENTITY(w.user)');
+
+            $queryBuilder->where('w.service = :service')
+                ->setParameters(array('service'=>$service_id));
 
 
         $query = $queryBuilder->getQuery();
         $results = $query->getResult();
+        }else{$results = array();}
         return $results;
     }
 
@@ -77,5 +136,43 @@ class Plugin extends AbstractPlugin
                 $serviceTemp->setDeletedAt(new \DateTime(date("Y-m-d H:i:s")));
                 $this->doctrineService->flush();
             }
+        }
+
+    public function updateWorkAt($serviceEntity,$selected,$oldSelected){
+        //selected is array of ids
+        foreach($oldSelected as $oldUsers)
+            {
+                $key = array_search($oldUsers["id"],$selected);
+                if($key == false)
+                    {
+                        $user = $this->doctrineService->getRepository('Application\Entity\WorkAt')->findOneBy(array("user"=>$oldUsers["id"]));
+                        $this->doctrineService->remove($user);
+                    }else{
+                        unset($selected[$key]);
+                    }
+            }
+
+        foreach($selected as $newUser)
+            {
+                $workAtEntity = new WorkAt();
+                $userEntity = $this->doctrineService->find('Application\Entity\User',$newUser);
+                $workAtEntity->setService($serviceEntity);
+                $workAtEntity->setUser($userEntity);
+                $this->doctrineService->persist($workAtEntity);
+            }
+        $this->doctrineService->flush();
+    }
+
+    public function getAvailableServices(\Application\Entity\User $user)
+        {
+            $userId = $user->getId();
+            $rows = $this->doctrineService->getRepository('Application\Entity\WorkAt')->findBy(array("user"=>$userId));
+            $result = array();
+            foreach($rows as $row)
+                {
+                    array_push($result,$row->getService());
+                }
+
+            return $result;
         }
 }

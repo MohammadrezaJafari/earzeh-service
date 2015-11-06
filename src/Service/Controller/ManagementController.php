@@ -7,12 +7,14 @@ use Zend\Mvc\Controller\AbstractActionController;// for run in zend's MVC
 use Ellie\Interfaces\ControllerInterface;
 use Application\Entity\Service;
 use Application\Entity\ServiceLang;
+use Zend\View\Model\ViewModel;
 
 class ManagementController extends  BaseController
     implements ControllerInterface
 {
     //***Services
     protected $doctrineService;
+    protected $authService;
     //***Other Vars
     protected $request;
     protected $language;
@@ -26,6 +28,7 @@ class ManagementController extends  BaseController
     public function __construct($services,$eventHandler)
     {
         $this->doctrineService = $services["doctrine"];
+        $this->authService = $services["auth"];
         $this->request = $this->getRequest();
         $this->eventHandler = $eventHandler;
 
@@ -39,15 +42,17 @@ class ManagementController extends  BaseController
         $this->serviceUiGeneratorPlugin = $this->ServiceUiGenerator();
         $languageCode = $this->params()->fromRoute('lang', 'fa');
         $this->language = $this->doctrineService->getRepository('Application\Entity\Language')->findOneBy(array("code"=> $languageCode));
+        if(!isset($this->language))
+            die("cant find language");
         return parent::onDispatch($e);
     }
 
     public function createAction()
     {
+        $usersData = $this->serviceQueryPlugin->getUsers();
         if($this->request->isPost())
             {
                 $submitedData = (array) $this->request->getPost();
-
                 $serviceEntity = new Service();
                 if(!empty($submitedData["parent"])){
 
@@ -68,6 +73,8 @@ class ManagementController extends  BaseController
                     $serviceTemp->setService($serviceEntity);
                     $this->doctrineService->persist($serviceTemp);
                 }
+
+                $this->serviceQueryPlugin->updateWorkAt($serviceEntity,isset($submitedData["selectedUsers"])?$submitedData["selectedUsers"]:array(),$usersData["selected"]);
                 $this->doctrineService->flush();
 
                 $this->layout()->message = [
@@ -77,15 +84,17 @@ class ManagementController extends  BaseController
 
             }
 
+        $usersData = $this->serviceQueryPlugin->getUsers();
         $services = $this->serviceUiGeneratorPlugin->getForTree($this->language->getId());
 
-        return $this->serviceUiGeneratorPlugin->getCreateServiceForm($services,$this->language->getCode());
+        return $this->serviceUiGeneratorPlugin->getCreateServiceForm($services,$usersData,$this->language->getCode());
+
     }
 
     public function editAction()
     {
         $id = $this->params()->fromRoute('id', null);
-
+        $usersData = $this->serviceQueryPlugin->getUsers($id);
         if($this->request->isPost())
             {
                 $submitedData = (array) $this->request->getPost();
@@ -97,6 +106,7 @@ class ManagementController extends  BaseController
                     $serviceEntity->setParent(null);
                 }
                 $this->serviceQueryPlugin->updateLanguageEntities($submitedData,$id);
+                $this->serviceQueryPlugin->updateWorkAt($serviceEntity,isset($submitedData["selectedUsers"])?$submitedData["selectedUsers"]:array(),$usersData["selected"]);
                 $this->doctrineService->flush();
                 $this->layout()->message = [
                     'type' => 'success',
@@ -104,9 +114,9 @@ class ManagementController extends  BaseController
                 ];
             }
         $currentService = $this->serviceQueryPlugin->getLanguageBased(array("id"=>$id,"deletedAt"=>"All"));
-
+        $usersData = $this->serviceQueryPlugin->getUsers($id);
         $services = $this->serviceUiGeneratorPlugin->getForTree($this->language->getId());
-        return $this->serviceUiGeneratorPlugin->getCreateServiceForm($services,$this->language->getCode(),$currentService);
+        return $this->serviceUiGeneratorPlugin->getCreateServiceForm($services,$usersData,$this->language->getCode(),$currentService);
     }
 
     public function deleteAction()
@@ -126,8 +136,23 @@ class ManagementController extends  BaseController
 
     public function listAction()
     {
-        $services = $this->serviceQueryPlugin->getLanguageBased(array("languageId"=>$this->language->getId(),"deletedAt"=>""));
-        die(var_dump($services));
+        if($this->authService->hasIdentity())
+            {
+                $user = $this->authService->getIdentity();
+                $availableServices =  $this->serviceQueryPlugin->getAvailableServices($user);
+                $result = array();
+                foreach ($availableServices as $service ) {
+                    $serviceTemp = $this->serviceQueryPlugin->getLanguageBased(array("languageId"=>$this->language->getId(),"deletedAt"=>"","id"=>$service->getId()));
+                    array_push($result,$serviceTemp[0]);
+                }
+
+
+                $view = new ViewModel();
+                $view->setTemplate('service/datatable');
+                $view->setVariable("services",$result);
+                return $view;
+
+            }
     }
 
 }

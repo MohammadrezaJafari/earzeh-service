@@ -1,0 +1,34 @@
+<?php
+$this->headLink()
+    ->appendStylesheet($this->basePath() . '/assets/layout/js/jquery.datatables/bootstrap-adapter/css/datatables.css')
+    ->appendStylesheet($this->basePath() . '/assets/layout/js/jquery.niftymodals/css/component.css');
+?>
+<?//=var_dump($services)?>
+<a href="<?=$this->url('service', array('controller'=>'management','action' => 'create'))?>"  class="btn btn-success btn-flat"><i class="fa fa-plus"></i> New Service</a>
+<div class="table-responsive">
+    <table class="table table-bordered" id="datatable" >
+        <thead>
+        <tr>
+            <th>Service Name</th>
+            <th style="text-align: center">Edit</th>
+            <th style="text-align: center">Delete</th>
+        </tr>
+        </thead>
+        <tbody>
+        <?php $even=0;?>
+        <?php foreach($services as $service):?>
+            <tr class="<?=($even)?"even":"odd"?>">
+                <td><?=$service["name"]?></td>
+                <td style="text-align: center">
+                    <a href="<?=$this->url('service', array('controller'=>'management','action' => 'edit',"id"=>$service["id"]))?>" class="btn btn-info btn-flat"><i class="fa fa-edit"></i> Edit</a>
+                </td>
+                <td style="text-align: center">
+                    <a href="<?=$this->url('service', array('controller'=>'management','action' => 'delete',"id"=>$service["id"]))?>" class="btn btn-warning btn-flat"><i class="fa fa-trash-o"></i> Delete</a>
+                </td>
+                <?php $even=($even)?0:1;?>
+            </tr>
+        <?php endforeach;?>
+<!--        -->
+        </tbody>
+    </table>
+</div>
