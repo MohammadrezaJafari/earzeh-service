@@ -24,6 +24,7 @@ class PluginFactory implements FactoryInterface
     {
         $realServiceLocator = $serviceLocator->getServiceLocator();
         $doctrineService = $realServiceLocator->get('Doctrine\ORM\EntityManager');
-        return new Plugin($doctrineService);
+        $aclService = $realServiceLocator->get('Ellie\Service\Acl');
+        return new Plugin($doctrineService,$aclService);
     }
 }

@@ -23,7 +23,8 @@ class ManagementControllerFactory implements FactoryInterface
         $eventHandler = null;
         $doctrineService = $realServiceLocator->get('Doctrine\ORM\EntityManager');
         $authService = $realServiceLocator->get('Ellie\Service\Authentication');
-        $services = array("doctrine"=>$doctrineService,"auth"=>$authService);
+        $aclService = $realServiceLocator->get('Ellie\Service\Acl');
+        $services = array("doctrine"=>$doctrineService,"auth"=>$authService,"acl"=>$aclService);
         return new ManagementController($services,$eventHandler);
     }
 }
